@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, serverTimestamp, query, setDoc,updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, serverTimestamp, query, setDoc, updateDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -14,6 +14,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 const auth = getAuth(app);
+
+const logAction = async (user, action, details) => {
+  await addDoc(collection(firestore, 'versionHistory'), {
+    user: user.email,
+    action,
+    details,
+    timestamp: serverTimestamp(),
+  });
+};
 
 export {
   firestore,
@@ -30,5 +39,6 @@ export {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateDoc
+  updateDoc,
+  logAction,
 };
