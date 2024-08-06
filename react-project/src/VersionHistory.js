@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { firestore, collection, onSnapshot, query } from './firebase';
+import { firestore, collection, onSnapshot, query, doc, setDoc, logAction } from './firebase';
 import { Table } from 'react-bootstrap';
 
-const VersionHistory = ({ categories }) => {
+const VersionHistory = ({ categories, user }) => {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
@@ -10,22 +10,15 @@ const VersionHistory = ({ categories }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const historyData = snapshot.docs.map((doc) => {
         const data = doc.data();
-        // Log the data for debugging
-        console.log('Version History Data:', data);
-
-        // Find category name
         const category = categories.find(cat => cat.id === data.categoryId);
-        const categoryName = category ? category.name : 'Unnamed Category'; // Use category name if available
-        
-        // Log the resolved category name
-        console.log('Resolved Category Name:', categoryName);
-
+        const categoryName = category ? category.name : 'Unnamed Category';
         return {
           id: doc.id,
           user: data.user,
           action: data.action,
-          details: data.details.replace(data.categoryId, categoryName), // Replace ID with name in details
+          details: data.details.replace(data.categoryId, categoryName),
           timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
+          originalData: data.originalData, // Include the original data for restoration
         };
       });
       setHistory(historyData);
@@ -33,6 +26,23 @@ const VersionHistory = ({ categories }) => {
 
     return () => unsubscribe();
   }, [categories]);
+
+  const handleRestore = async (entry) => {
+    const { originalData } = entry;
+
+    if (originalData.commentId) {
+      // Restore a comment
+      const commentRef = doc(firestore, 'categories', originalData.categoryId, 'comments', originalData.commentId);
+      await setDoc(commentRef, originalData.commentData);
+    } else if (originalData.categoryId) {
+      // Restore a category
+      const categoryRef = doc(firestore, 'categories', originalData.categoryId);
+      await setDoc(categoryRef, originalData.categoryData);
+    }
+
+    await logAction(user, 'Restored', `Restored data from version history: ${entry.details}`);
+    alert('Restoration successful');
+  };
 
   return (
     <div>
@@ -48,7 +58,7 @@ const VersionHistory = ({ categories }) => {
         </thead>
         <tbody>
           {history.map((entry) => (
-            <tr key={entry.id}>
+            <tr key={entry.id} onClick={() => handleRestore(entry)} style={{ cursor: 'pointer' }}>
               <td>{entry.user}</td>
               <td>{entry.action}</td>
               <td>{entry.details}</td>
