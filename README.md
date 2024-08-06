@@ -130,6 +130,4 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 - [Firebase Documentation](https://firebase.google.com/docs)
 - [React Bootstrap Documentation](https://react-bootstrap.github.io/)
 
-## License
-
-This project is licensed under the MIT License.
+[Link to an explanatory video about the project](https://ooo.mmhmm.app/watch/z_B4SLPW2c0eJ1PgUPANcT)
